@@ -10,7 +10,7 @@ MODEL_ID = "gemini-2.5-flash"
 
 client = genai.Client(api_key=API_KEY)
 
-st.set_page_config(page_title="PulseAI Assistant",
+st.set_page_config(page_title="NL2SQL",
                    page_icon="⚡", layout="wide")
 
 # --- 2. THE AI ENGINE ---
