@@ -2,46 +2,129 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 from google import genai
+from google.genai import errors
 
-# Configuration
+# --- 1. CONFIGURATION ---
 API_KEY = "AIzaSyAAhxl95yKVx1ARYm1urtNTz0fdPi3YftE"
+MODEL_ID = "gemini-2.5-flash"
+
 client = genai.Client(api_key=API_KEY)
 
-st.title("🏃‍♂️ Health Data Chatbot")
+st.set_page_config(page_title="PulseAI Assistant", page_icon="⚡", layout="wide")
 
+# --- 2. THE AI ENGINE ---
 def get_sql_from_ai(user_question):
-    # Updated with your specific CSV schema
+    # Unified prompt for Gemini 2.5 Flash
     prompt = f"""
-    Act as a precise Natural Language to SQL translator. Table: `health_metrics` 
-    Columns: `Duration`, `Pulse`, `Maxpulse`, `Calories`. 
-    Convert this question to SQL: {user_question}
-    Return ONLY the raw SQL string.
-    """
-    response = client.models.generate_content(
-        model='gemini-2.5-flash', # or 'gemini-3-flash-preview'
-        contents=prompt
-    )
-    return response.text.strip()
-
-user_input = st.text_input("Ask about your activity (e.g., 'What is the average pulse for 60 min sessions?')")
-
-if user_input:
-    sql = get_sql_from_ai(user_input)
+    Act as a precise Natural Language to SQL translator.
+    Database Schema: Table 'health_metrics' with columns (Duration, Pulse, Maxpulse, Calories).
     
-    if "ERROR" in sql:
-        st.error(sql)
-    else:
-        st.code(sql, language="sql")
-        try:
-            # Connecting to the DB created from your CSV
-            conn = sqlite3.connect('mock_data.db')
-            df = pd.read_sql_query(sql, conn)
-            conn.close()
-            
-            st.dataframe(df)
-            
-            # Automated visualization
-            if not df.empty and 'Calories' in df.columns:
-                st.line_chart(df['Calories'])
-        except Exception as e:
-            st.error(f"SQL Error: {e}")
+    Task: Convert the user's question into a valid SQLite query.
+    Rules:
+    - Return ONLY the raw SQL string (no markdown, no ```sql).
+    - Use only the provided column names.
+    - If the request is not a data query, return 'ERROR: Invalid Request'.
+    
+    User Question: {user_question}
+    """
+    try:
+        response = client.models.generate_content(model=MODEL_ID, contents=prompt)
+        return response.text.strip()
+    except errors.ClientError as e:
+        if "429" in str(e):
+            return "ERROR: Rate limit hit. Please wait a few seconds."
+        return f"ERROR: {str(e)}"
+
+# --- 3. UI LAYOUT & STYLE ---
+st.title("⚡ PulseAI: Interactive Health Insights")
+st.markdown("---")
+
+# Sidebar for schema and quick actions
+with st.sidebar:
+    st.header("📊 Data Reference")
+    st.write("**Table:** `health_metrics`")
+    st.write("**Columns:** `Duration`, `Pulse`, `Maxpulse`, `Calories`")
+    
+    st.divider()
+    st.subheader("💡 Suggested Queries")
+    if st.button("Top 5 highest calorie sessions"):
+        st.session_state.chat_input_val = "Show top 5 sessions by calories"
+    if st.button("Average pulse for 60m sessions"):
+        st.session_state.chat_input_val = "What is the average pulse for 60 min duration?"
+
+# Initialize Chat History
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Display Chat History
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+        if "df" in msg:
+            st.dataframe(msg["df"], use_container_width=True)
+
+# --- 4. CHAT INPUT LOGIC ---
+if "chat_input_val" in st.session_state:
+    user_query = st.chat_input("Ask about your activity data...", key="main_chat", on_submit=None)
+    # This logic handles the sidebar button clicks
+    user_query = st.session_state.pop("chat_input_val")
+else:
+    user_query = st.chat_input("Ask about your activity data...")
+
+if user_query:
+    # Add user message to UI
+    st.session_state.messages.append({"role": "user", "content": user_query})
+    with st.chat_message("user"):
+        st.markdown(user_query)
+
+    # Process with AI
+    with st.chat_message("assistant"):
+        with st.spinner("Gemini is analyzing your data..."):
+            sql = get_sql_from_ai(user_query)
+        
+        if "ERROR" in sql:
+            st.warning(sql)
+        else:
+            try:
+                # Query Database
+                conn = sqlite3.connect('mock_data.db')
+                df = pd.read_sql_query(sql, conn)
+                conn.close()
+
+                if df.empty:
+                    st.info("Query successful, but no results found.")
+                else:
+                    # 5. DASHBOARD ELEMENTS
+                    st.toast("Data Retrieved!", icon="✅")
+                    
+                    # Show quick metrics if numeric data is available
+                    m_col1, m_col2, m_col3 = st.columns(3)
+                    if 'Calories' in df.columns:
+                        m_col1.metric("Max Calories", f"{df['Calories'].max():.1f}")
+                    if 'Pulse' in df.columns:
+                        m_col2.metric("Avg Pulse", f"{df['Pulse'].mean():.0f} BPM")
+                    m_col3.metric("Records Found", len(df))
+
+                    # Use Tabs for a clean look
+                    t_data, t_chart, t_sql = st.tabs(["📄 Data Table", "📈 Visualization", "💻 SQL Code"])
+                    
+                    with t_data:
+                        st.dataframe(df, use_container_width=True)
+                    
+                    with t_chart:
+                        if len(df) > 1:
+                            st.area_chart(df)
+                        else:
+                            st.write("Not enough data points for a chart.")
+                    
+                    with t_sql:
+                        st.code(sql, language="sql")
+
+                    # Save to History
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": f"I found the following for: *{user_query}*", 
+                        "df": df
+                    })
+            except Exception as e:
+                st.error(f"Execution Error: {e}")
