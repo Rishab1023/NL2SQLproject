@@ -5,7 +5,7 @@ from google import genai
 from google.genai import errors
 
 # --- 1. CONFIGURATION ---
-API_KEY = "AIzaSyAAhxl95yKVx1ARYm1urtNTz0fdPi3YftE"
+API_KEY = "YOUR_API_KEY_HERE"
 MODEL_ID = "gemini-2.5-flash"
 
 client = genai.Client(api_key=API_KEY)
