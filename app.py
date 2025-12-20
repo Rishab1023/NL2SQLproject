@@ -5,14 +5,17 @@ from google import genai
 from google.genai import errors
 
 # --- 1. CONFIGURATION ---
-API_KEY = "YOUR_API_KEY_HERE"
+API_KEY = ""
 MODEL_ID = "gemini-2.5-flash"
 
 client = genai.Client(api_key=API_KEY)
 
-st.set_page_config(page_title="PulseAI Assistant", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="PulseAI Assistant",
+                   page_icon="⚡", layout="wide")
 
 # --- 2. THE AI ENGINE ---
+
+
 def get_sql_from_ai(user_question):
     # Unified prompt for Gemini 2.5 Flash
     prompt = f"""
@@ -28,15 +31,17 @@ def get_sql_from_ai(user_question):
     User Question: {user_question}
     """
     try:
-        response = client.models.generate_content(model=MODEL_ID, contents=prompt)
+        response = client.models.generate_content(
+            model=MODEL_ID, contents=prompt)
         return response.text.strip()
     except errors.ClientError as e:
         if "429" in str(e):
             return "ERROR: Rate limit hit. Please wait a few seconds."
         return f"ERROR: {str(e)}"
 
+
 # --- 3. UI LAYOUT & STYLE ---
-st.title("⚡ PulseAI: Interactive Health Insights")
+st.title("⚡ NL2SQL")
 st.markdown("---")
 
 # Sidebar for schema and quick actions
@@ -44,7 +49,7 @@ with st.sidebar:
     st.header("📊 Data Reference")
     st.write("**Table:** `health_metrics`")
     st.write("**Columns:** `Duration`, `Pulse`, `Maxpulse`, `Calories`")
-    
+
     st.divider()
     st.subheader("💡 Suggested Queries")
     if st.button("Top 5 highest calorie sessions"):
@@ -65,7 +70,8 @@ for msg in st.session_state.messages:
 
 # --- 4. CHAT INPUT LOGIC ---
 if "chat_input_val" in st.session_state:
-    user_query = st.chat_input("Ask about your activity data...", key="main_chat", on_submit=None)
+    user_query = st.chat_input(
+        "Ask about your activity data...", key="main_chat", on_submit=None)
     # This logic handles the sidebar button clicks
     user_query = st.session_state.pop("chat_input_val")
 else:
@@ -81,7 +87,7 @@ if user_query:
     with st.chat_message("assistant"):
         with st.spinner("Gemini is analyzing your data..."):
             sql = get_sql_from_ai(user_query)
-        
+
         if "ERROR" in sql:
             st.warning(sql)
         else:
@@ -96,34 +102,37 @@ if user_query:
                 else:
                     # 5. DASHBOARD ELEMENTS
                     st.toast("Data Retrieved!", icon="✅")
-                    
+
                     # Show quick metrics if numeric data is available
                     m_col1, m_col2, m_col3 = st.columns(3)
                     if 'Calories' in df.columns:
-                        m_col1.metric("Max Calories", f"{df['Calories'].max():.1f}")
+                        m_col1.metric("Max Calories",
+                                      f"{df['Calories'].max():.1f}")
                     if 'Pulse' in df.columns:
-                        m_col2.metric("Avg Pulse", f"{df['Pulse'].mean():.0f} BPM")
+                        m_col2.metric(
+                            "Avg Pulse", f"{df['Pulse'].mean():.0f} BPM")
                     m_col3.metric("Records Found", len(df))
 
                     # Use Tabs for a clean look
-                    t_data, t_chart, t_sql = st.tabs(["📄 Data Table", "📈 Visualization", "💻 SQL Code"])
-                    
+                    t_data, t_chart, t_sql = st.tabs(
+                        ["📄 Data Table", "📈 Visualization", "💻 SQL Code"])
+
                     with t_data:
                         st.dataframe(df, use_container_width=True)
-                    
+
                     with t_chart:
                         if len(df) > 1:
                             st.area_chart(df)
                         else:
                             st.write("Not enough data points for a chart.")
-                    
+
                     with t_sql:
                         st.code(sql, language="sql")
 
                     # Save to History
                     st.session_state.messages.append({
-                        "role": "assistant", 
-                        "content": f"I found the following for: *{user_query}*", 
+                        "role": "assistant",
+                        "content": f"I found the following for: *{user_query}*",
                         "df": df
                     })
             except Exception as e:
