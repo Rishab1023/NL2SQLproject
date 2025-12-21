@@ -1,70 +1,57 @@
-# PulseAI: Interactive Health Insights
+NL2SQL is an AI-powered data assistant that allows users to chat with their database in plain English. Built for the people who are not into tech, it converts natural language questions into complex SQL queries to provide instant insights from activity data.
 
-PulseAI is a smart data assistant built with Streamlit that allows you to have a conversation with your health and activity data. Ask questions in plain English, and the app will translate your query into SQL, fetch the data, and display it in tables and charts.
+🚀 Features
+Natural Language to SQL: Powered by Gemini 2.5 Flash to translate human questions into precise SQLite queries.
 
-This application leverages the Gemini 2.5 Flash model from Google AI to understand natural language and generate SQL queries on the fly.
+Interactive Chat UI: A clean, conversational interface built with Streamlit.
 
-## Features
+Instant Dashboarding: Automatically generates metric cards (Avg Pulse, Calories) and interactive area charts based on query results.
 
--   **Natural Language Queries**: Ask questions like "What was my average pulse?" or "Show top 5 sessions by calories burned".
--   **Interactive Data Visualization**: View your data in sortable tables and dynamic charts.
--   **AI-Powered SQL Generation**: Converts your questions into SQLite queries.
--   **Chat History**: Keeps track of your conversation with the data.
--   **Data Schema Reference**: A handy reference in the sidebar shows the table and column names.
+Schema Awareness: Deep understanding of health metrics including Duration, Pulse, Maxpulse, and Calories.
 
-## How to Run
+Secure & Robust: Implements Streamlit Secrets for API security and robust error handling for rate limits.
 
-### 1. Prerequisites
+🛠️ Tech Stack
+LLM: Google Gemini 2.5 Flash
 
--   Python 3.7+
--   An API key for the Google AI API.
+Framework: Streamlit
 
-### 2. Installation
+Database: SQLite (Self-initializing from CSV)
 
-Clone the repository and install the required Python packages.
+Language: Python 3.11+
 
-```bash
-git clone https://github.com/your-username/SQLproject.git
-cd SQLproject
-pip install streamlit pandas google-generativeai
-```
+Libraries: google-genai, pandas, sqlite3
 
-### 3. Set Up Your API Key
+📋 Database Schema
+The assistant queries a table named health_metrics with the following structure: | Column | Type | Description | | :--- | :--- | :--- | | Duration | INT | Length of the workout in minutes | | Pulse | INT | Average heart rate during the session | | Maxpulse | INT | Peak heart rate recorded | | Calories | FLOAT | Total energy expenditure in kcal |
 
-Open the `app.py` file and replace the placeholder API key with your own.
+⚙️ Installation & Local Setup
+Clone the repository:
 
-```python
-# In app.py
-API_KEY = "YOUR_GOOGLE_AI_API_KEY" 
-```
+Bash
 
-### 4. Initialize the Database
+git clone https://github.com/your-username/your-repo-name.git
+cd your-repo-name
+Install dependencies:
 
-Run the setup script to create the SQLite database (`mock_data.db`) from the provided `data.csv`.
+Bash
 
-```bash
-python setup_db.py
-```
+pip install -r requirements.txt
+Set up your environment variables: Create a .streamlit/secrets.toml file and add your API key:
 
-### 5. Launch the App
+Ini, TOML
 
-Run the Streamlit application.
+GEMINI_API_KEY = "your_api_key_here"
+Run the application:
 
-```bash
+Bash
+
 streamlit run app.py
-```
+🌟 Example Queries to Try
+"What is the average pulse for sessions longer than 45 minutes?"
 
-The application will open in your web browser.
+"Show me the top 10 workouts where I burned the most calories."
 
-## Data Schema
+"Compare Pulse and Maxpulse for my 60-minute sessions."
 
-The application queries a single table named `health_metrics` in the `mock_data.db` database. The schema for this table is as follows:
-
-| Column     | Type    | Description                               |
-|------------|---------|-------------------------------------------|
-| `Duration` | INTEGER | The duration of the activity in minutes.  |
-| `Pulse`    | INTEGER | The average pulse rate during the activity. |
-| `Maxpulse` | INTEGER | The maximum pulse rate during the activity.|
-| `Calories` | REAL    | The number of calories burned.            |
-
-Now you can start asking questions about your data!
+"Total calories burned across all recorded activities."
