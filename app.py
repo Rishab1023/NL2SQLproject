@@ -15,16 +15,25 @@ st.set_page_config(page_title="NL2SQL",
                    page_icon="⚡", layout="wide")
 
 # --- 2. ENV: Ensure local DB (for Streamlit deployment) ---
-# Create `mock_data.db` from `data.csv` when the DB file doesn't exist.
-db_created = False
-if not os.path.exists('mock_data.db'):
-    df_init = pd.read_csv('data.csv')
-    df_init = df_init.fillna(0)  # Cleaning missing data
-    conn_init = sqlite3.connect('mock_data.db')
-    df_init.to_sql('health_metrics', conn_init,
-                   index=False, if_exists='replace')
-    conn_init.close()
-    db_created = True
+
+
+def validate_db():
+    db_path = 'mock_data.db'
+    # If file doesn't exist OR is size 0 (corrupted), recreate it
+    if not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
+        st.info("Re-initializing database from CSV...")
+        df = pd.read_csv('data.csv')
+        df = df.fillna(0)
+        conn = sqlite3.connect(db_path)
+        df.to_sql('health_metrics', conn, index=False, if_exists='replace')
+        conn.close()
+        st.success("Database ready!")
+        return True
+    return False
+
+
+# Validate DB and set flag for UI
+db_created = validate_db()
 
 # --- 2. THE AI ENGINE ---
 
