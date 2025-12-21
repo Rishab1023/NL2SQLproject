@@ -1,17 +1,30 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
+import os
 from google import genai
 from google.genai import errors
 
 # --- 1. CONFIGURATION ---
-API_KEY = ""
+API_KEY = st.secrets["GEMINI_API_KEY"]
 MODEL_ID = "gemini-2.5-flash"
 
 client = genai.Client(api_key=API_KEY)
 
 st.set_page_config(page_title="NL2SQL",
                    page_icon="⚡", layout="wide")
+
+# --- 2. ENV: Ensure local DB (for Streamlit deployment) ---
+# Create `mock_data.db` from `data.csv` when the DB file doesn't exist.
+db_created = False
+if not os.path.exists('mock_data.db'):
+    df_init = pd.read_csv('data.csv')
+    df_init = df_init.fillna(0)  # Cleaning missing data
+    conn_init = sqlite3.connect('mock_data.db')
+    df_init.to_sql('health_metrics', conn_init,
+                   index=False, if_exists='replace')
+    conn_init.close()
+    db_created = True
 
 # --- 2. THE AI ENGINE ---
 
@@ -49,6 +62,12 @@ with st.sidebar:
     st.header("📊 Data Reference")
     st.write("**Table:** `health_metrics`")
     st.write("**Columns:** `Duration`, `Pulse`, `Maxpulse`, `Calories`")
+
+    # Small status indicator for DB initialization
+    if db_created:
+        st.success("✅ `mock_data.db` created from `data.csv`")
+    else:
+        st.caption("Using existing `mock_data.db`")
 
     st.divider()
     st.subheader("💡 Suggested Queries")
