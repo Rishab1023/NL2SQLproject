@@ -15,7 +15,6 @@ st.set_page_config(page_title="NL2SQL",
                    page_icon="⚡", layout="wide")
 
 # --- 2. ENV: Ensure local DB (for Streamlit deployment) ---
-<<<<<<< HEAD
 
 
 def validate_db():
@@ -37,23 +36,8 @@ def validate_db():
 db_created = validate_db()
 # Keep status in session state so UI reflects manual recreations
 st.session_state["db_created"] = db_created
-=======
-# Create `mock_data.db` from `data.csv` when the DB file doesn't exist.
-db_created = False
-if not os.path.exists('mock_data.db'):
-    df_init = pd.read_csv('data.csv')
-    df_init = df_init.fillna(0)  # Cleaning missing data
-    conn_init = sqlite3.connect('mock_data.db')
-    df_init.to_sql('health_metrics', conn_init,
-                   index=False, if_exists='replace')
-    conn_init.close()
-    db_created = True
->>>>>>> parent of bad328d (Refactor database initialization logic in app.py to improve validation and re-initialization process)
-
-# --- 2. THE AI ENGINE ---
-
-
-def get_sql_from_ai(user_question):
+lization process)
+stion):
     # Unified prompt for Gemini 2.5 Flash
     prompt = f"""
     Act as a precise Natural Language to SQL translator.
