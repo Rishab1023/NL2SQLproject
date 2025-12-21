@@ -146,7 +146,7 @@ if user_query:
                         ["📄 Data Table", "📈 Visualization", "💻 SQL Code"])
 
                     with t_data:
-                        st.dataframe(df, use_container_width=True)
+                        st.dataframe(df, width="stretch")
 
                     with t_chart:
                         if len(df) > 1:
