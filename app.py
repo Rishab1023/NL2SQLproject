@@ -34,6 +34,8 @@ def validate_db():
 
 # Validate DB and set flag for UI
 db_created = validate_db()
+# Keep status in session state so UI reflects manual recreations
+st.session_state["db_created"] = db_created
 
 # --- 2. THE AI ENGINE ---
 
@@ -73,10 +75,36 @@ with st.sidebar:
     st.write("**Columns:** `Duration`, `Pulse`, `Maxpulse`, `Calories`")
 
     # Small status indicator for DB initialization
-    if db_created:
+    db_status = st.session_state.get("db_created", db_created)
+    if db_status:
         st.success("✅ `mock_data.db` created from `data.csv`")
     else:
         st.caption("Using existing `mock_data.db`")
+
+    # Manual control to recreate DB for testing (with confirmation)
+    if st.button("🔁 Recreate DB"):
+        st.session_state["show_recreate_confirm"] = True
+
+    if st.session_state.get("show_recreate_confirm", False):
+        st.warning(
+            "This will DELETE the existing `mock_data.db` and rebuild it from `data.csv`.")
+        c1, c2 = st.columns([1, 1])
+        if c1.button("Yes — Delete & Recreate"):
+            try:
+                if os.path.exists('mock_data.db'):
+                    os.remove('mock_data.db')
+            except Exception as e:
+                st.error(f"Unable to remove existing DB: {e}")
+            recreated = validate_db()
+            st.session_state["db_created"] = recreated
+            if recreated:
+                st.success("Database recreated from `data.csv`")
+            else:
+                st.warning(
+                    "Recreation did not occur. Check `data.csv` or permissions.")
+            st.session_state["show_recreate_confirm"] = False
+        if c2.button("Cancel"):
+            st.session_state["show_recreate_confirm"] = False
 
     st.divider()
     st.subheader("💡 Suggested Queries")
