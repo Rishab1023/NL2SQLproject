@@ -120,4 +120,4 @@ This project is provided under the MIT License. See `LICENSE` (if present) for d
 
 ---
 
-If you'd like, I can also add a short deployment section for Streamlit Cloud, a `requirements.txt` sanity check, or a small screenshot to the repo. Which would you prefer next?
+
