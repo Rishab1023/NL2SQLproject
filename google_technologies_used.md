@@ -1,0 +1,1 @@
+**Google Generative AI (Gemini 2.5 Flash model)** is used for Natural Language to SQL translation.
